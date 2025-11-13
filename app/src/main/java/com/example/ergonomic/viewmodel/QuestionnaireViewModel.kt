@@ -9,6 +9,10 @@ import com.example.ergonomic.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import com.example.ergonomic.engine.ReportGenerator
+import com.example.ergonomic.engine.UserContext
+import com.example.ergonomic.engine.Budget
+import com.example.ergonomic.ml.toEnhanced
 
 class QuestionnaireViewModel : ViewModel() {
 
@@ -184,13 +188,19 @@ class QuestionnaireViewModel : ViewModel() {
             }
         }
     }
+    private var reportGenerator: ReportGenerator? = null
+
+    fun initializeReportGenerator() {
+        knowledgeBaseManager?.let { kb ->
+            reportGenerator = ReportGenerator(kb)
+        }
+    }
 
     /**
      * ANÁLISIS HÍBRIDO: ML + Knowledge Base
      * Combina predicción del modelo con recomendaciones detalladas
      */
     private fun analyzeWithMLAndKnowledgeBase(data: QuestionnaireData): AnalysisResult {
-
         // 1. PREDICCIÓN CON MODELO ML
         val mlPrediction = mlModel?.predict(data)
 
@@ -200,37 +210,70 @@ class QuestionnaireViewModel : ViewModel() {
             println("   Áreas: ${mlPrediction.criticalAreas}")
             println("   Síntomas: ${mlPrediction.symptomsProbabilities}")
 
-            // 2. OBTENER RECOMENDACIONES DEL KNOWLEDGE BASE
-            val recommendations = knowledgeBaseManager?.generateEnhancedRecommendations(data)
-                ?: generateBasicRecommendations(data)
+            // 2. CONVERTIR A ENHANCED PREDICTION
+            val enhancedPrediction = mlPrediction.toEnhanced()
 
-            // 3. CREAR ÁREAS CRÍTICAS
-            val criticalAreas = mlPrediction.criticalAreas.mapIndexed { index, area ->
-                CriticalArea(
-                    name = area,
-                    severity = 0.7f + (index * 0.1f),
-                    description = getAreaDescription(area, data)
-                )
-            }
-
-            // 4. CREAR SÍNTOMAS
-            val symptoms = mlPrediction.symptomsProbabilities.map { (symptom, prob) ->
-                Symptom(
-                    name = symptom,
-                    probability = prob,
-                    description = getSymptomDescription(symptom)
-                )
-            }
-
-            // 5. COMBINAR TODO
-            return AnalysisResult(
-                riskLevel = mlPrediction.riskLevel,
-                riskScore = mlPrediction.riskScore,
-                confidence = mlPrediction.confidence,
-                criticalAreas = criticalAreas,
-                likelySymptoms = symptoms,
-                recommendations = recommendations
+            // 3. CREAR CONTEXTO DE USUARIO
+            val userContext = UserContext(
+                workHours = data.workHours,
+                hasExistingPain = data.hasNeckPain || data.hasBackPain || data.hasWristPain,
+                budget = Budget.MEDIUM, // Por defecto, podrías agregarlo al cuestionario
+                age = data.age,
+                previousIssues = buildList {
+                    if (data.hasNeckPain) add("Dolor cervical")
+                    if (data.hasBackPain) add("Dolor lumbar")
+                    if (data.hasWristPain) add("Dolor de muñecas")
+                }
             )
+
+            // 4. GENERAR REPORTE CON MOTOR DE GENERACIÓN
+            if (reportGenerator == null) {
+                initializeReportGenerator()
+            }
+
+            val personalizedReport = reportGenerator?.generateReport(
+                enhancedPrediction,
+                userContext
+            )
+
+            // 5. CONVERTIR REPORTE A ANALYSISRESULT
+            return if (personalizedReport != null) {
+                AnalysisResult(
+                    riskLevel = personalizedReport.riskLevel,
+                    riskScore = (personalizedReport.confidence * 100).toInt(),
+                    confidence = personalizedReport.confidence,
+                    criticalAreas = personalizedReport.criticalAreas.map { area ->
+                        CriticalArea(
+                            name = area.name,
+                            severity = area.severity,
+                            description = area.description
+                        )
+                    },
+                    likelySymptoms = personalizedReport.likelySymptoms.map { symptom ->
+                        Symptom(
+                            name = symptom.name,
+                            probability = symptom.probability,
+                            description = "Severidad: ${symptom.severity}"
+                        )
+                    },
+                    recommendations = personalizedReport.recommendations.map { rec ->
+                        Recommendation(
+                            priority = rec.urgency.name,
+                            category = rec.recommendation.targetArea.displayName,
+                            title = rec.recommendation.title,
+                            description = rec.recommendation.description,
+                            actions = listOf(
+                                "Costo: ${rec.recommendation.cost}",
+                                "Tiempo: ${rec.recommendation.timeToImplement} min",
+                                "Impacto: ${(rec.recommendation.estimatedImpact * 100).toInt()}%"
+                            )
+                        )
+                    }
+                )
+            } else {
+                // Fallback si el motor de generación falla
+                analyzeWithRules(data)
+            }
 
         } else {
             // Fallback si ML no está disponible

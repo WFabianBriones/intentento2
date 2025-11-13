@@ -278,4 +278,158 @@ class KnowledgeBaseManager(private val context: Context) {
             }
         }
     }
+    // Agregar estos métodos al final de KnowledgeBaseManager.kt
+
+    /**
+     * Obtener recomendaciones basadas en severidad de áreas críticas
+     */
+    fun getRecommendationsForSeverity(areaType: String, severity: Float): List<DetailedRecommendation> {
+        val recommendations = mutableListOf<DetailedRecommendation>()
+
+        when(areaType.lowercase()) {
+            "silla", "chair" -> {
+                if (severity > 0.7f) {
+                    getRecommendationByKey("chair_inadequate")?.let { recommendations.add(it) }
+                } else {
+                    getRecommendationByKey("chair_basic")?.let { recommendations.add(it) }
+                }
+                getRecommendationByKey("no_lumbar_support")?.let { recommendations.add(it) }
+            }
+            "monitor" -> {
+                getRecommendationByKey("monitor_too_high")?.let { recommendations.add(it) }
+                getRecommendationByKey("monitor_too_low")?.let { recommendations.add(it) }
+                getRecommendationByKey("laptop_without_support")?.let { recommendations.add(it) }
+            }
+            "pausas", "breaks" -> {
+                getRecommendationByKey("no_breaks")?.let { recommendations.add(it) }
+                getRecommendationByKey("insufficient_breaks")?.let { recommendations.add(it) }
+            }
+            "iluminación", "lighting" -> {
+                getRecommendationByKey("poor_lighting")?.let { recommendations.add(it) }
+                getRecommendationByKey("screen_glare")?.let { recommendations.add(it) }
+            }
+        }
+
+        return recommendations
+    }
+
+    /**
+     * Obtener quick wins (acciones rápidas de alto impacto)
+     */
+    fun getQuickWins(): List<QuickWin> {
+        return listOf(
+            QuickWin(
+                area = "Monitor",
+                title = "Ajustar altura de monitor",
+                description = "Baja o sube el monitor para que el borde superior esté a nivel de ojos",
+                timeMinutes = 5,
+                impact = 0.9f,
+                cost = "Gratis"
+            ),
+            QuickWin(
+                area = "Pausas",
+                title = "Configurar alarma de pausas",
+                description = "Configura alarma cada 45 min en tu teléfono",
+                timeMinutes = 2,
+                impact = 0.85f,
+                cost = "Gratis"
+            ),
+            QuickWin(
+                area = "Silla",
+                title = "Soporte lumbar temporal",
+                description = "Usa toalla enrollada como soporte lumbar",
+                timeMinutes = 3,
+                impact = 0.7f,
+                cost = "Gratis"
+            ),
+            QuickWin(
+                area = "Iluminación",
+                title = "Reposicionar monitor",
+                description = "Coloca monitor perpendicular a ventanas para evitar reflejos",
+                timeMinutes = 5,
+                impact = 0.6f,
+                cost = "Gratis"
+            )
+        )
+    }
+
+    /**
+     * Obtener alivio inmediato para síntomas
+     */
+    fun getImmediateRelief(symptomType: String): ImmediateRelief? {
+        return when(symptomType.lowercase()) {
+            "cervical", "cuello", "neck" -> ImmediateRelief(
+                symptom = "Dolor cervical",
+                title = "Ejercicios de alivio cervical",
+                description = "Rotaciones suaves de cuello (10 rep) + estiramiento lateral (15seg cada lado)",
+                durationMinutes = 3,
+                exercises = getExercisesByBodyPart("neck")
+            )
+            "lumbar", "espalda", "back" -> ImmediateRelief(
+                symptom = "Dolor lumbar",
+                title = "Estiramientos de espalda",
+                description = "Inclinación pélvica sentado (15 rep) + rotación de tronco",
+                durationMinutes = 4,
+                exercises = getExercisesByBodyPart("back")
+            )
+            "muñecas", "wrist" -> ImmediateRelief(
+                symptom = "Dolor de muñecas",
+                title = "Estiramientos de muñeca",
+                description = "Extensión y flexión de muñecas (15seg cada uno)",
+                durationMinutes = 2,
+                exercises = getExercisesByBodyPart("wrists")
+            )
+            "visual", "ojos", "eye" -> ImmediateRelief(
+                symptom = "Fatiga visual",
+                title = "Descanso visual",
+                description = "Regla 20-20-20: Mira 20 pies lejos por 20 seg",
+                durationMinutes = 1,
+                exercises = getExercisesByBodyPart("eyes")
+            )
+            else -> null
+        }
+    }
+
+    /**
+     * Obtener explicación de impacto de un área
+     */
+    fun getAreaImpactExplanation(areaType: String, severity: Float): String {
+        val severityText = when {
+            severity > 0.8f -> "crítica"
+            severity > 0.6f -> "alta"
+            severity > 0.4f -> "moderada"
+            else -> "baja"
+        }
+
+        return when(areaType.lowercase()) {
+            "silla", "chair" ->
+                "Configuración de silla $severityText. Una silla inadecuada causa el ${(severity * 100).toInt()}% de los problemas lumbares."
+            "monitor" ->
+                "Posición de monitor $severityText. Altura incorrecta causa tensión cervical en el ${(severity * 100).toInt()}% de casos."
+            "pausas", "breaks" ->
+                "Frecuencia de pausas $severityText. Sin pausas adecuadas, el riesgo de TME aumenta ${(severity * 100).toInt()}%."
+            "iluminación", "lighting" ->
+                "Condiciones de iluminación ${severityText}. Mala iluminación causa fatiga visual en el ${(severity * 100).toInt()}% de usuarios."
+            else ->
+                "Área con severidad $severityText (${(severity * 100).toInt()}%)"
+        }
+    }
+
+    // Data classes para las nuevas funcionalidades
+    data class QuickWin(
+        val area: String,
+        val title: String,
+        val description: String,
+        val timeMinutes: Int,
+        val impact: Float,
+        val cost: String
+    )
+
+    data class ImmediateRelief(
+        val symptom: String,
+        val title: String,
+        val description: String,
+        val durationMinutes: Int,
+        val exercises: List<Exercise>
+    )
 }
