@@ -36,8 +36,13 @@ class QuestionnaireViewModel : ViewModel() {
     // ML Model
     private var mlModel: ErgonomicMLModel? = null
 
+    // Report Generator
+    private var reportGenerator: ReportGenerator? = null
+
     fun setKnowledgeBaseManager(manager: KnowledgeBaseManager) {
         knowledgeBaseManager = manager
+        // Inicializar ReportGenerator cuando se carga el KnowledgeBase
+        reportGenerator = ReportGenerator(manager)
     }
 
     fun setMLModel(context: Context) {
@@ -45,7 +50,7 @@ class QuestionnaireViewModel : ViewModel() {
     }
 
     // ========================================================================
-    // MÉTODOS DE ACTUALIZACIÓN (sin cambios)
+    // MÉTODOS DE ACTUALIZACIÓN (sin cambios - mantén los que ya tienes)
     // ========================================================================
 
     fun updateChairType(type: ChairType) {
@@ -180,6 +185,7 @@ class QuestionnaireViewModel : ViewModel() {
                 _analysisResult.value = result
             } catch (e: Exception) {
                 e.printStackTrace()
+                println("❌ Error en análisis: ${e.message}")
                 // Fallback a análisis con reglas si ML falla
                 val result = analyzeWithRules(_questionnaireData.value)
                 _analysisResult.value = result
@@ -188,17 +194,9 @@ class QuestionnaireViewModel : ViewModel() {
             }
         }
     }
-    private var reportGenerator: ReportGenerator? = null
-
-    fun initializeReportGenerator() {
-        knowledgeBaseManager?.let { kb ->
-            reportGenerator = ReportGenerator(kb)
-        }
-    }
 
     /**
-     * ANÁLISIS HÍBRIDO: ML + Knowledge Base
-     * Combina predicción del modelo con recomendaciones detalladas
+     * ANÁLISIS CON MOTOR DE GENERACIÓN NIVEL 3
      */
     private fun analyzeWithMLAndKnowledgeBase(data: QuestionnaireData): AnalysisResult {
         // 1. PREDICCIÓN CON MODELO ML
@@ -210,73 +208,75 @@ class QuestionnaireViewModel : ViewModel() {
             println("   Áreas: ${mlPrediction.criticalAreas}")
             println("   Síntomas: ${mlPrediction.symptomsProbabilities}")
 
-            // 2. CONVERTIR A ENHANCED PREDICTION
-            val enhancedPrediction = mlPrediction.toEnhanced()
+            try {
+                // 2. CONVERTIR A ENHANCED PREDICTION
+                val enhancedPrediction = mlPrediction.toEnhanced()
 
-            // 3. CREAR CONTEXTO DE USUARIO
-            val userContext = UserContext(
-                workHours = data.workHours,
-                hasExistingPain = data.hasNeckPain || data.hasBackPain || data.hasWristPain,
-                budget = Budget.MEDIUM, // Por defecto, podrías agregarlo al cuestionario
-                age = data.age,
-                previousIssues = buildList {
-                    if (data.hasNeckPain) add("Dolor cervical")
-                    if (data.hasBackPain) add("Dolor lumbar")
-                    if (data.hasWristPain) add("Dolor de muñecas")
-                }
-            )
-
-            // 4. GENERAR REPORTE CON MOTOR DE GENERACIÓN
-            if (reportGenerator == null) {
-                initializeReportGenerator()
-            }
-
-            val personalizedReport = reportGenerator?.generateReport(
-                enhancedPrediction,
-                userContext
-            )
-
-            // 5. CONVERTIR REPORTE A ANALYSISRESULT
-            return if (personalizedReport != null) {
-                AnalysisResult(
-                    riskLevel = personalizedReport.riskLevel,
-                    riskScore = (personalizedReport.confidence * 100).toInt(),
-                    confidence = personalizedReport.confidence,
-                    criticalAreas = personalizedReport.criticalAreas.map { area ->
-                        CriticalArea(
-                            name = area.name,
-                            severity = area.severity,
-                            description = area.description
-                        )
-                    },
-                    likelySymptoms = personalizedReport.likelySymptoms.map { symptom ->
-                        Symptom(
-                            name = symptom.name,
-                            probability = symptom.probability,
-                            description = "Severidad: ${symptom.severity}"
-                        )
-                    },
-                    recommendations = personalizedReport.recommendations.map { rec ->
-                        Recommendation(
-                            priority = rec.urgency.name,
-                            category = rec.recommendation.targetArea.displayName,
-                            title = rec.recommendation.title,
-                            description = rec.recommendation.description,
-                            actions = listOf(
-                                "Costo: ${rec.recommendation.cost}",
-                                "Tiempo: ${rec.recommendation.timeToImplement} min",
-                                "Impacto: ${(rec.recommendation.estimatedImpact * 100).toInt()}%"
-                            )
-                        )
+                // 3. CREAR CONTEXTO DE USUARIO
+                val userContext = UserContext(
+                    workHours = data.workHours,
+                    hasExistingPain = data.hasNeckPain || data.hasBackPain || data.hasWristPain,
+                    budget = Budget.MEDIUM,
+                    age = data.age,
+                    previousIssues = buildList {
+                        if (data.hasNeckPain) add("Dolor cervical")
+                        if (data.hasBackPain) add("Dolor lumbar")
+                        if (data.hasWristPain) add("Dolor de muñecas")
                     }
                 )
-            } else {
-                // Fallback si el motor de generación falla
-                analyzeWithRules(data)
+
+                // 4. GENERAR REPORTE CON MOTOR DE GENERACIÓN
+                val personalizedReport = reportGenerator?.generateReport(
+                    enhancedPrediction,
+                    userContext
+                )
+
+                // 5. CONVERTIR REPORTE A ANALYSISRESULT
+                return if (personalizedReport != null) {
+                    println("✅ Reporte personalizado generado")
+                    AnalysisResult(
+                        riskLevel = personalizedReport.riskLevel,
+                        riskScore = (personalizedReport.confidence * 100).toInt(),
+                        confidence = personalizedReport.confidence,
+                        criticalAreas = personalizedReport.criticalAreas.map { area ->
+                            CriticalArea(
+                                name = area.name,
+                                severity = area.severity,
+                                description = area.description
+                            )
+                        },
+                        likelySymptoms = personalizedReport.likelySymptoms.map { symptom ->
+                            Symptom(
+                                name = symptom.name,
+                                probability = symptom.probability,
+                                description = "Severidad: ${symptom.severity}"
+                            )
+                        },
+                        recommendations = personalizedReport.recommendations.take(5).map { rec ->
+                            Recommendation(
+                                priority = rec.urgency.name,
+                                category = rec.recommendation.targetArea.displayName,
+                                title = rec.recommendation.title,
+                                description = rec.recommendation.description,
+                                actions = listOf(
+                                    "Costo: ${rec.recommendation.cost}",
+                                    "Tiempo: ${rec.recommendation.timeToImplement} min",
+                                    "Impacto: ${(rec.recommendation.estimatedImpact * 100).toInt()}%"
+                                )
+                            )
+                        }
+                    )
+                } else {
+                    println("⚠️ ReportGenerator devolvió null, usando fallback")
+                    analyzeWithRules(data)
+                }
+            } catch (e: Exception) {
+                println("❌ Error en Motor de Generación: ${e.message}")
+                e.printStackTrace()
+                return analyzeWithRules(data)
             }
 
         } else {
-            // Fallback si ML no está disponible
             println("⚠️ ML no disponible, usando análisis por reglas")
             return analyzeWithRules(data)
         }
@@ -345,30 +345,6 @@ class QuestionnaireViewModel : ViewModel() {
             likelySymptoms = symptoms,
             recommendations = recommendations
         )
-    }
-
-    // ========================================================================
-    // HELPERS
-    // ========================================================================
-
-    private fun getAreaDescription(area: String, data: QuestionnaireData): String {
-        return when (area) {
-            "Silla" -> "Configuración de silla inadecuada para trabajo prolongado"
-            "Monitor" -> "Altura o distancia del monitor fuera de rango ergonómico"
-            "Pausas" -> "Frecuencia de pausas insuficiente para prevención de TME"
-            "Iluminación" -> "Condiciones de iluminación inadecuadas causando fatiga visual"
-            else -> "Requiere atención ergonómica"
-        }
-    }
-
-    private fun getSymptomDescription(symptom: String): String {
-        return when (symptom) {
-            "Dolor cervical" -> "Tensión en cuello y cervicales por postura o monitor"
-            "Dolor lumbar" -> "Molestia en espalda baja por silla o postura prolongada"
-            "Dolor de muñecas" -> "Tensión en muñecas por posición de teclado/mouse"
-            "Fatiga visual" -> "Cansancio ocular por iluminación o tiempo de pantalla"
-            else -> "Síntoma relacionado con ergonomía"
-        }
     }
 
     private fun generateBasicRecommendations(data: QuestionnaireData): List<Recommendation> {

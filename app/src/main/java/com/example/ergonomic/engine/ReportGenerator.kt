@@ -1,49 +1,45 @@
 package com.example.ergonomic.engine
 
-import com.example.ergonomic.data.KnowledgeBase
-import com.example.ergonomic.ml.MLPrediction
+import com.example.ergonomic.data.KnowledgeBaseManager
+import com.example.ergonomic.ml.EnhancedMLPrediction
+import com.example.ergonomic.ml.AreaType
+import com.example.ergonomic.ml.LikelySymptomDetail
+import com.example.ergonomic.ml.CriticalAreaDetail
+import com.example.ergonomic.model.RiskLevel
 
 /**
  * NIVEL 3: MOTOR DE GENERACIÓN
  * Combina predicciones ML + Knowledge Base → Reporte Personalizado
  */
 class ReportGenerator(
-    private val knowledgeBase: KnowledgeBase
+    private val knowledgeBase: KnowledgeBaseManager
 ) {
 
-    /**
-     * Genera reporte personalizado completo
-     */
     fun generateReport(
-        mlPrediction: MLPrediction,
+        mlPrediction: EnhancedMLPrediction,
         userContext: UserContext
     ): PersonalizedReport {
 
-        // 1. Obtener recomendaciones basadas en áreas críticas detectadas por ML
         val recommendations = getRecommendationsForAreas(
             criticalAreas = mlPrediction.criticalAreas,
             confidence = mlPrediction.confidence
         )
 
-        // 2. Priorizar según severidad ML
         val prioritized = prioritizeRecommendations(
             recommendations = recommendations,
             mlPrediction = mlPrediction
         )
 
-        // 3. Generar acciones inmediatas
         val immediateActions = generateImmediateActions(
             mlPrediction = mlPrediction,
             userContext = userContext
         )
 
-        // 4. Generar plan de mejora
         val improvementPlan = generateImprovementPlan(
             prioritized = prioritized,
-            timeframe = 30 // días
+            timeframe = 30
         )
 
-        // 5. Generar explicación contextual
         val explanation = generateContextualExplanation(
             mlPrediction = mlPrediction,
             userContext = userContext
@@ -62,46 +58,43 @@ class ReportGenerator(
         )
     }
 
-    /**
-     * Obtiene recomendaciones específicas para áreas críticas
-     */
     private fun getRecommendationsForAreas(
-        criticalAreas: List<CriticalArea>,
+        criticalAreas: List<CriticalAreaDetail>,
         confidence: Float
     ): List<Recommendation> {
         return criticalAreas.flatMap { area ->
-            val areaRecommendations = when(area.type) {
-                AreaType.CHAIR -> knowledgeBase.getChairRecommendations(area.severity)
-                AreaType.MONITOR -> knowledgeBase.getMonitorRecommendations(area.severity)
-                AreaType.BREAKS -> knowledgeBase.getBreakRecommendations(area.severity)
-                AreaType.LIGHTING -> knowledgeBase.getLightingRecommendations(area.severity)
-                AreaType.POSTURE -> knowledgeBase.getPostureRecommendations(area.severity)
-                AreaType.KEYBOARD -> knowledgeBase.getKeyboardRecommendations(area.severity)
-                AreaType.MOUSE -> knowledgeBase.getMouseRecommendations(area.severity)
-                AreaType.DESK -> knowledgeBase.getDeskRecommendations(area.severity)
-            }
+            val detailedRecs = knowledgeBase.getRecommendationsForSeverity(
+                area.type.displayName,
+                area.severity
+            )
 
-            // Filtrar por nivel de confianza
-            areaRecommendations.filter { rec ->
-                confidence >= rec.minimumConfidenceRequired
+            detailedRecs.map { detail ->
+                Recommendation(
+                    title = detail.title,
+                    description = detail.description,
+                    targetArea = area.type,
+                    estimatedImpact = when(detail.priority) {
+                        "URGENTE", "CRITICO" -> 0.9f
+                        "ALTA" -> 0.75f
+                        "MEDIA" -> 0.5f
+                        else -> 0.3f
+                    },
+                    implementationDifficulty = 0.3f,
+                    cost = Cost.FREE,
+                    timeToImplement = 15,
+                    minimumConfidenceRequired = 0.5f
+                )
             }
         }
     }
 
-    /**
-     * Prioriza recomendaciones según severidad ML y facilidad de implementación
-     */
     private fun prioritizeRecommendations(
         recommendations: List<Recommendation>,
-        mlPrediction: MLPrediction
+        mlPrediction: EnhancedMLPrediction
     ): List<PrioritizedRecommendation> {
         return recommendations.map { rec ->
-            // Calcular score de prioridad
             val severityScore = calculateSeverityScore(rec, mlPrediction)
             val impactScore = rec.estimatedImpact
-            val effortScore = 1.0f - rec.implementationDifficulty
-
-            // Fórmula de priorización: (Impacto * Severidad) / Esfuerzo
             val priorityScore = (impactScore * severityScore) / (rec.implementationDifficulty + 0.1f)
 
             PrioritizedRecommendation(
@@ -112,17 +105,13 @@ class ReportGenerator(
         }.sortedByDescending { it.priorityScore }
     }
 
-    /**
-     * Genera acciones inmediatas (quick wins)
-     */
     private fun generateImmediateActions(
-        mlPrediction: MLPrediction,
+        mlPrediction: EnhancedMLPrediction,
         userContext: UserContext
     ): List<ImmediateAction> {
         val actions = mutableListOf<ImmediateAction>()
 
-        // Acciones basadas en riesgo crítico
-        if (mlPrediction.riskLevel == RiskLevel.CRITICAL) {
+        if (mlPrediction.riskLevel == RiskLevel.CRITICO) {
             actions.add(ImmediateAction(
                 title = "🚨 Acción Urgente",
                 description = "Tu nivel de riesgo es CRÍTICO. Toma un descanso de 15 minutos ahora mismo.",
@@ -132,9 +121,8 @@ class ReportGenerator(
             ))
         }
 
-        // Acciones basadas en síntomas probables
         mlPrediction.likelySymptoms.filter { it.probability > 0.7f }.forEach { symptom ->
-            knowledgeBase.getImmediateReliefFor(symptom.type)?.let { relief ->
+            knowledgeBase.getImmediateRelief(symptom.type.displayName)?.let { relief ->
                 actions.add(ImmediateAction(
                     title = "💊 Alivio para ${symptom.name}",
                     description = relief.description,
@@ -145,17 +133,14 @@ class ReportGenerator(
             }
         }
 
-        // Acciones quick-win (bajo esfuerzo, alto impacto)
-        mlPrediction.criticalAreas.forEach { area ->
-            knowledgeBase.getQuickWinsFor(area.type)?.let { quickWin ->
-                actions.add(ImmediateAction(
-                    title = "⚡ Quick Win: ${area.name}",
-                    description = quickWin.description,
-                    timeRequired = quickWin.durationMinutes,
-                    impact = Impact.HIGH,
-                    category = ActionCategory.QUICK_WIN
-                ))
-            }
+        knowledgeBase.getQuickWins().take(2).forEach { quickWin ->
+            actions.add(ImmediateAction(
+                title = "⚡ Quick Win: ${quickWin.area}",
+                description = quickWin.description,
+                timeRequired = quickWin.timeMinutes,
+                impact = Impact.HIGH,
+                category = ActionCategory.QUICK_WIN
+            ))
         }
 
         return actions.sortedByDescending {
@@ -163,9 +148,6 @@ class ReportGenerator(
         }.take(3)
     }
 
-    /**
-     * Genera plan de mejora escalonado (30 días)
-     */
     private fun generateImprovementPlan(
         prioritized: List<PrioritizedRecommendation>,
         timeframe: Int
@@ -174,7 +156,7 @@ class ReportGenerator(
         val itemsPerWeek = (prioritized.size / 4.0).toInt().coerceAtLeast(1)
 
         prioritized.chunked(itemsPerWeek).forEachIndexed { index, weekRecommendations ->
-            if (index < 4) { // 4 semanas
+            if (index < 4) {
                 weeks.add(WeekPlan(
                     weekNumber = index + 1,
                     focus = determineWeekFocus(weekRecommendations),
@@ -194,29 +176,23 @@ class ReportGenerator(
         )
     }
 
-    /**
-     * Genera explicación contextual del análisis
-     */
     private fun generateContextualExplanation(
-        mlPrediction: MLPrediction,
+        mlPrediction: EnhancedMLPrediction,
         userContext: UserContext
     ): String {
         val sb = StringBuilder()
 
-        // Introducción basada en nivel de riesgo
         sb.append(getRiskLevelIntro(mlPrediction.riskLevel, mlPrediction.confidence))
         sb.append("\n\n")
 
-        // Explicar áreas críticas
         sb.append("🎯 **Áreas que requieren atención:**\n\n")
         mlPrediction.criticalAreas.take(3).forEach { area ->
             sb.append("• **${area.name}**: ")
-            sb.append(explainAreaImpact(area, userContext))
+            sb.append(knowledgeBase.getAreaImpactExplanation(area.type.displayName, area.severity))
             sb.append("\n")
         }
         sb.append("\n")
 
-        // Explicar síntomas probables
         val highProbSymptoms = mlPrediction.likelySymptoms.filter { it.probability > 0.6f }
         if (highProbSymptoms.isNotEmpty()) {
             sb.append("⚠️ **Síntomas que podrías desarrollar:**\n\n")
@@ -226,25 +202,20 @@ class ReportGenerator(
             sb.append("\n")
         }
 
-        // Mensaje motivacional
         sb.append(getMotivationalMessage(mlPrediction.riskLevel))
 
         return sb.toString()
     }
 
-    // ============ HELPER FUNCTIONS ============
-
-    private fun calculateSeverityScore(
-        rec: Recommendation,
-        mlPrediction: MLPrediction
-    ): Float {
+    // Helper functions
+    private fun calculateSeverityScore(rec: Recommendation, mlPrediction: EnhancedMLPrediction): Float {
         val area = mlPrediction.criticalAreas.find { it.type == rec.targetArea }
         return area?.severity ?: 0.5f
     }
 
     private fun calculateUrgency(severityScore: Float, riskLevel: RiskLevel): Urgency {
         return when {
-            riskLevel == RiskLevel.CRITICAL -> Urgency.IMMEDIATE
+            riskLevel == RiskLevel.CRITICO -> Urgency.IMMEDIATE
             severityScore > 0.8f -> Urgency.HIGH
             severityScore > 0.6f -> Urgency.MEDIUM
             else -> Urgency.LOW
@@ -262,14 +233,12 @@ class ReportGenerator(
         }
     }
 
-    private fun calculateExpectedReduction(
-        prioritized: List<PrioritizedRecommendation>
-    ): Float {
-        // Estimación optimista: suma de impactos ponderados
+    private fun calculateExpectedReduction(prioritized: List<PrioritizedRecommendation>): Float {
         val totalImpact = prioritized.take(10).sumOf {
             it.recommendation.estimatedImpact.toDouble()
         }
-        return (totalImpact * 0.7f).coerceIn(0.3f, 0.9f).toFloat()
+        // CORRECCIÓN: Usar Double literals (0.7, 0.3, 0.9) ya que totalImpact es Double
+        return (totalImpact * 0.7).coerceIn(0.3, 0.9).toFloat()
     }
 
     private fun generateMilestones(weeks: List<WeekPlan>): List<Milestone> {
@@ -281,9 +250,7 @@ class ReportGenerator(
         )
     }
 
-    private fun calculateEstimatedImpact(
-        prioritized: List<PrioritizedRecommendation>
-    ): EstimatedImpact {
+    private fun calculateEstimatedImpact(prioritized: List<PrioritizedRecommendation>): EstimatedImpact {
         val shortTerm = prioritized.take(3).sumOf {
             it.recommendation.estimatedImpact.toDouble()
         }.toFloat() / 3f
@@ -293,9 +260,9 @@ class ReportGenerator(
         }.toFloat() / 10f
 
         return EstimatedImpact(
-            shortTerm = shortTerm, // 1 semana
-            mediumTerm = (shortTerm + longTerm) / 2f, // 2 semanas
-            longTerm = longTerm // 4 semanas
+            shortTerm = shortTerm,
+            mediumTerm = (shortTerm + longTerm) / 2f,
+            longTerm = longTerm
         )
     }
 
@@ -307,36 +274,30 @@ class ReportGenerator(
         }
 
         return when(level) {
-            RiskLevel.LOW -> "✅ Tu configuración ergonómica es buena, $confidenceText. Hay algunas áreas de mejora menor."
-            RiskLevel.MEDIUM -> "⚠️ Tu configuración tiene riesgo moderado, $confidenceText. Es importante hacer ajustes preventivos."
-            RiskLevel.HIGH -> "🔴 Tu configuración presenta riesgo alto, $confidenceText. Se requieren cambios urgentes."
-            RiskLevel.CRITICAL -> "🚨 Tu configuración es crítica, $confidenceText. Actúa inmediatamente para prevenir lesiones."
+            RiskLevel.BAJO -> "✅ Tu configuración ergonómica es buena, $confidenceText. Hay algunas áreas de mejora menor."
+            RiskLevel.MEDIO -> "⚠️ Tu configuración tiene riesgo moderado, $confidenceText. Es importante hacer ajustes preventivos."
+            RiskLevel.ALTO -> "🔴 Tu configuración presenta riesgo alto, $confidenceText. Se requieren cambios urgentes."
+            RiskLevel.CRITICO -> "🚨 Tu configuración es crítica, $confidenceText. Actúa inmediatamente para prevenir lesiones."
         }
-    }
-
-    private fun explainAreaImpact(area: CriticalArea, context: UserContext): String {
-        return knowledgeBase.getImpactExplanation(area.type, area.severity) ?:
-        "Requiere atención (severidad: ${(area.severity * 100).toInt()}%)"
     }
 
     private fun getMotivationalMessage(level: RiskLevel): String {
         return when(level) {
-            RiskLevel.LOW -> "💪 ¡Buen trabajo! Pequeños ajustes te llevarán a la configuración perfecta."
-            RiskLevel.MEDIUM -> "🎯 Siguiendo este plan, puedes reducir tu riesgo significativamente en 2-3 semanas."
-            RiskLevel.HIGH -> "⚡ Los cambios que hagas ahora prevendrán problemas serios. ¡Empieza hoy!"
-            RiskLevel.CRITICAL -> "🚨 Tu salud es prioridad. Cada acción que tomes tendrá un impacto inmediato positivo."
+            RiskLevel.BAJO -> "💪 ¡Buen trabajo! Pequeños ajustes te llevarán a la configuración perfecta."
+            RiskLevel.MEDIO -> "🎯 Siguiendo este plan, puedes reducir tu riesgo significativamente en 2-3 semanas."
+            RiskLevel.ALTO -> "⚡ Los cambios que hagas ahora prevendrán problemas serios. ¡Empieza hoy!"
+            RiskLevel.CRITICO -> "🚨 Tu salud es prioridad. Cada acción que tomes tendrá un impacto inmediato positivo."
         }
     }
 }
 
-// ============ DATA CLASSES ============
-
+// Data classes
 data class PersonalizedReport(
     val riskLevel: RiskLevel,
     val confidence: Float,
     val explanation: String,
-    val criticalAreas: List<CriticalArea>,
-    val likelySymptoms: List<LikelySymptom>,
+    val criticalAreas: List<CriticalAreaDetail>,
+    val likelySymptoms: List<LikelySymptomDetail>,
     val immediateActions: List<ImmediateAction>,
     val recommendations: List<PrioritizedRecommendation>,
     val improvementPlan: ImprovementPlan,
@@ -361,17 +322,17 @@ data class Recommendation(
     val title: String,
     val description: String,
     val targetArea: AreaType,
-    val estimatedImpact: Float, // 0.0 - 1.0
-    val implementationDifficulty: Float, // 0.0 - 1.0
+    val estimatedImpact: Float,
+    val implementationDifficulty: Float,
     val cost: Cost,
-    val timeToImplement: Int, // minutos
+    val timeToImplement: Int,
     val minimumConfidenceRequired: Float = 0.5f
 )
 
 data class ImmediateAction(
     val title: String,
     val description: String,
-    val timeRequired: Int, // minutos
+    val timeRequired: Int,
     val impact: Impact,
     val category: ActionCategory
 )
@@ -397,13 +358,11 @@ data class Milestone(
 )
 
 data class EstimatedImpact(
-    val shortTerm: Float,  // 1 semana
-    val mediumTerm: Float, // 2 semanas
-    val longTerm: Float    // 4 semanas
+    val shortTerm: Float,
+    val mediumTerm: Float,
+    val longTerm: Float
 )
 
-enum class RiskLevel { LOW, MEDIUM, HIGH, CRITICAL }
-enum class AreaType { CHAIR, MONITOR, BREAKS, LIGHTING, POSTURE, KEYBOARD, MOUSE, DESK }
 enum class Urgency { LOW, MEDIUM, HIGH, IMMEDIATE }
 enum class Impact(val value: Float) { LOW(0.3f), MEDIUM(0.6f), HIGH(0.9f) }
 enum class ActionCategory { BREAK, RELIEF, QUICK_WIN, ADJUSTMENT }
