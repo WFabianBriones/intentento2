@@ -1,0 +1,456 @@
+{
+  "version": "1.0",
+  "last_updated": "2025-11-11",
+
+  "risk_descriptions": {
+    "BAJO": {
+      "title": "Riesgo Bajo",
+      "description": "Tu configuración ergonómica es adecuada. Mantén los buenos hábitos.",
+      "color": "#4CAF50",
+      "emoji": "✅"
+    },
+    "MEDIO": {
+      "title": "Riesgo Medio",
+      "description": "Algunas áreas requieren mejoras para prevenir problemas futuros.",
+      "color": "#FFC107",
+      "emoji": "⚠️"
+    },
+    "ALTO": {
+      "title": "Riesgo Alto",
+      "description": "Configuración actual puede causar problemas de salud. Acción necesaria.",
+      "color": "#FF9800",
+      "emoji": "🔶"
+    },
+    "CRITICO": {
+      "title": "Riesgo Crítico",
+      "description": "Situación de alto riesgo. Cambios urgentes requeridos para prevenir lesiones.",
+      "color": "#F44336",
+      "emoji": "🚨"
+    }
+  },
+
+  "recommendations": {
+    "chair_inadequate": {
+      "priority": "URGENTE",
+      "category": "Mobiliario",
+      "title": "Cambiar silla inadecuada inmediatamente",
+      "description": "Una silla de comedor o cocina no está diseñada para trabajo prolongado y causa daño musculoesquelético",
+      "actions": [
+        "Usar cojín lumbar grueso como medida temporal (HOY)",
+        "Planificar compra de silla ergonómica en 1-2 semanas máximo",
+        "Hacer pausas cada 30 minutos obligatorias",
+        "Limitar tiempo sentado a 2 horas continuas máximo",
+        "Alternar con trabajo de pie si es posible"
+      ],
+      "budget_options": {
+        "temporal": "Cojín lumbar ($15-30) + pausas frecuentes",
+        "economico": "Silla ergonómica básica ($150-250)",
+        "medio": "Silla completa con ajustes ($250-500)",
+        "premium": "Silla profesional certificada ($500-1200)"
+      },
+      "health_impact": "Alto riesgo de dolor lumbar crónico, hernias discales y problemas posturales permanentes",
+      "roi": "Una silla ergonómica cuesta $300. Tratamiento de dolor crónico: $500-2000/año"
+    },
+
+    "chair_basic": {
+      "priority": "ALTA",
+      "category": "Mobiliario",
+      "title": "Mejorar silla básica",
+      "description": "Silla sin ajustes limita la ergonomía correcta",
+      "actions": [
+        "Agregar cojín lumbar ajustable ($20-40)",
+        "Usar apoyapies si pies no tocan el suelo ($15-30)",
+        "Evaluar upgrade a silla con más ajustes",
+        "Hacer pausas cada 60 minutos"
+      ],
+      "health_impact": "Riesgo moderado de fatiga muscular y molestias lumbares"
+    },
+
+    "no_lumbar_support": {
+      "priority": "ALTA",
+      "category": "Mobiliario",
+      "title": "Agregar soporte lumbar urgente",
+      "description": "Sin soporte lumbar en jornadas largas causa tensión en espalda baja",
+      "actions": [
+        "Comprar cojín lumbar ergonómico ($20-40)",
+        "Alternativa inmediata: toalla enrollada 10cm diámetro",
+        "Posicionar en curva natural de espalda baja",
+        "Ajustar altura para mantener curva lumbar"
+      ],
+      "diy_solution": "Enrollar toalla de baño formando cilindro de 8-10cm, fijar con cinta adhesiva, colocar en espalda baja"
+    },
+
+    "monitor_too_high": {
+      "priority": "URGENTE",
+      "category": "Configuración",
+      "title": "Bajar monitor a altura correcta HOY",
+      "description": "Monitor por encima de ojos fuerza extensión cervical continua causando dolor",
+      "actions": [
+        "Bajar monitor 10-15cm inmediatamente",
+        "Borde superior debe estar a nivel de ojos o ligeramente inferior",
+        "Distancia: 50-70cm (longitud de brazo extendido)",
+        "Inclinar pantalla 10-20 grados hacia arriba",
+        "Verificar: debes mirar ligeramente hacia abajo (10-15°)"
+      ],
+      "quick_fix": "Quitar libros/soporte que eleva el monitor. Si está en pared, bajar soporte",
+      "health_impact": "Causa tensión en trapecio superior, dolor cervical, cefaleas tensionales",
+      "prevention": "Cada mes verificar que altura no ha cambiado"
+    },
+
+    "monitor_too_low": {
+      "priority": "URGENTE",
+      "category": "Configuración",
+      "title": "Elevar monitor a altura correcta",
+      "description": "Monitor muy bajo fuerza flexión cervical excesiva",
+      "actions": [
+        "Elevar monitor con soporte estable",
+        "Borde superior a nivel de ojos",
+        "Usar libros, cajas o soporte comercial",
+        "Si es laptop: OBLIGATORIO usar soporte + teclado externo"
+      ],
+      "laptop_solution": "Soporte para laptop ($15-40) + teclado USB ($15-30) = $30-70",
+      "health_impact": "Dolor cervical bajo, postura encorvada, cifosis dorsal"
+    },
+
+    "laptop_without_support": {
+      "priority": "CRITICO",
+      "category": "Configuración",
+      "title": "Laptop sin soporte es configuración más dañina",
+      "description": "Usar laptop directamente en mesa fuerza cabeza hacia abajo 45° causando daño severo",
+      "actions": [
+        "URGENTE: Comprar soporte para laptop HOY ($15-40)",
+        "Comprar teclado y mouse externos básicos ($30-50)",
+        "Elevar laptop hasta que pantalla esté a altura de ojos",
+        "Mientras llega: usar libros/cajas como soporte temporal"
+      ],
+      "total_investment": "$45-90 (costo de 2-3 consultas médicas)",
+      "health_impact": "Síndrome del cuello técnico (text neck), alto riesgo TME cervical, dolor crónico garantizado en 3-6 meses",
+      "roi": "Costo solución: $50. Costo tratamiento dolor crónico: $500-1500/año"
+    },
+
+    "no_breaks": {
+      "priority": "URGENTE",
+      "category": "Hábitos",
+      "title": "Implementar pausas activas INMEDIATAMENTE",
+      "description": "Sin pausas, el riesgo de trastornos musculoesqueléticos es crítico",
+      "actions": [
+        "Configurar alarma cada 45 minutos (no negociable)",
+        "Al sonar alarma: LEVANTARSE obligatoriamente",
+        "Caminar 2-3 minutos (ir por agua, al baño, ventana)",
+        "Hacer 3 estiramientos básicos (30 segundos cada uno)",
+        "Nunca trabajar más de 60 minutos continuo"
+      ],
+      "exercise_routine": [
+        "Rotación de cuello suave (10 repeticiones)",
+        "Elevación de hombros (10 repeticiones)",
+        "Extensión de muñecas (15 segundos cada mano)",
+        "Sentadillas ligeras (5 repeticiones)",
+        "Mirar a lo lejos 20 segundos (regla 20-20-20)"
+      ],
+      "apps_recommended": [
+        "Stretchly (gratuito, multiplataforma)",
+        "Time Out (macOS)",
+        "Workrave (Windows/Linux)",
+        "Break Timer (Android/iOS)"
+      ],
+      "health_impact": "Sin pausas: 95% probabilidad TME en 6-12 meses. Con pausas: riesgo reduce 60-70%"
+    },
+
+    "insufficient_breaks": {
+      "priority": "ALTA",
+      "category": "Hábitos",
+      "title": "Aumentar frecuencia de pausas",
+      "description": "Pausas solo para baño son insuficientes para prevención",
+      "actions": [
+        "Incrementar a pausas cada 60-90 minutos mínimo",
+        "Meta ideal: cada 45-60 minutos",
+        "Incluir micro-pausas de 30 segundos cada 20 minutos",
+        "Durante pausas: levantarse y moverse, no solo sentarse diferente"
+      ],
+      "micro_breaks": "Cada 20 min: parar 20 seg, mirar 20 pies lejos (regla 20-20-20)"
+    },
+
+    "poor_lighting": {
+      "priority": "MEDIA",
+      "category": "Ambiente",
+      "title": "Mejorar iluminación del espacio",
+      "description": "Iluminación inadecuada causa fatiga visual y cefaleas",
+      "actions": [
+        "Agregar lámpara LED de escritorio regulable ($25-60)",
+        "Temperatura color: 4000-5000K (luz neutra)",
+        "Posicionar lámpara lateral, nunca detrás del monitor",
+        "Iluminación indirecta reduce reflejos",
+        "Luz natural complementar con artificial"
+      ],
+      "ideal_setup": "Luz natural de lado + lámpara de escritorio ajustable + iluminación ambiente suave"
+    },
+
+    "screen_glare": {
+      "priority": "MEDIA",
+      "category": "Configuración",
+      "title": "Eliminar reflejos en pantalla",
+      "description": "Reflejos causan fatiga visual y fuerzan posturas incorrectas",
+      "actions": [
+        "Reposicionar monitor perpendicular a ventanas",
+        "Usar cortinas o persianas para control de luz",
+        "Protector antirreflejante para pantalla ($15-30)",
+        "Reducir brillo ambiente excesivo",
+        "Limpiar pantalla regularmente"
+      ],
+      "quick_fix": "Ajustar ángulo de pantalla y cerrar cortinas cuando hay sol directo"
+    },
+
+    "continuous_sitting": {
+      "priority": "ALTA",
+      "category": "Hábitos",
+      "title": "Reducir tiempo sentado continuo",
+      "description": "Más de 2 horas continuas sentado es factor de riesgo independiente",
+      "actions": [
+        "Límite máximo: 90 minutos continuo",
+        "Meta ideal: 45-60 minutos",
+        "Alternar con trabajo de pie si es posible",
+        "Usar escritorio de pie/ajustable",
+        "Reuniones caminando cuando sea factible"
+      ],
+      "standing_desk": "Escritorios ajustables ($150-400) o convertidores ($50-150) permiten alternar posición"
+    }
+  },
+
+  "exercises": {
+    "neck": [
+      {
+        "name": "Rotación cervical suave",
+        "description": "Gira lentamente la cabeza de izquierda a derecha, como diciendo 'no'",
+        "repetitions": "10 cada lado",
+        "duration": "2 segundos por movimiento",
+        "frequency": "Cada 2 horas",
+        "image": "neck_rotation.png"
+      },
+      {
+        "name": "Inclinación lateral",
+        "description": "Inclina cabeza hacia hombro sin elevar el hombro opuesto",
+        "repetitions": "10 cada lado",
+        "duration": "15 segundos mantener",
+        "frequency": "Cada 2 horas",
+        "benefit": "Estira músculos laterales del cuello"
+      },
+      {
+        "name": "Retracción cervical",
+        "description": "Empuja barbilla hacia atrás haciendo 'doble mentón', mantén postura neutral",
+        "repetitions": "10",
+        "duration": "5 segundos mantener",
+        "frequency": "Cada hora",
+        "benefit": "Fortalece músculos cervicales profundos, previene postura adelantada"
+      }
+    ],
+
+    "shoulders": [
+      {
+        "name": "Elevación de hombros",
+        "description": "Sube hombros hacia orejas, mantén, baja lentamente",
+        "repetitions": "10",
+        "duration": "3 segundos arriba",
+        "frequency": "Cada hora",
+        "benefit": "Relaja trapecio superior"
+      },
+      {
+        "name": "Círculos de hombros",
+        "description": "Rotación amplia de hombros hacia adelante y atrás",
+        "repetitions": "10 cada dirección",
+        "frequency": "Cada 2 horas",
+        "benefit": "Moviliza articulación escapular"
+      },
+      {
+        "name": "Estiramiento pectoral",
+        "description": "Entrelaza manos detrás de espalda, empuja brazos hacia atrás",
+        "duration": "20 segundos",
+        "repetitions": "3",
+        "benefit": "Contrarresta postura encorvada"
+      }
+    ],
+
+    "back": [
+      {
+        "name": "Gato-camello",
+        "description": "A cuatro patas, alterna entre arquear espalda hacia arriba y hacia abajo",
+        "repetitions": "15",
+        "duration": "3 segundos cada posición",
+        "frequency": "2-3 veces al día",
+        "benefit": "Moviliza toda la columna vertebral"
+      },
+      {
+        "name": "Inclinación pélvica sentado",
+        "description": "Sentado, alterna entre arquear y redondear espalda baja",
+        "repetitions": "15",
+        "frequency": "Cada hora",
+        "benefit": "Reduce rigidez lumbar"
+      }
+    ],
+
+    "wrists": [
+      {
+        "name": "Extensión de muñeca",
+        "description": "Brazo extendido, tira dedos hacia atrás con otra mano",
+        "repetitions": "10 cada mano",
+        "duration": "15 segundos",
+        "frequency": "Cada hora",
+        "benefit": "Previene síndrome túnel carpiano"
+      },
+      {
+        "name": "Flexión de muñeca",
+        "description": "Brazo extendido, empuja dedos hacia abajo con otra mano",
+        "repetitions": "10 cada mano",
+        "duration": "15 segundos",
+        "frequency": "Cada hora"
+      },
+      {
+        "name": "Círculos de muñeca",
+        "description": "Rota muñecas en círculos amplios",
+        "repetitions": "10 cada dirección",
+        "frequency": "Cada hora"
+      }
+    ],
+
+    "eyes": [
+      {
+        "name": "Regla 20-20-20",
+        "description": "Cada 20 minutos, mira algo a 20 pies (6 metros) durante 20 segundos",
+        "frequency": "Cada 20 minutos",
+        "benefit": "Previene fatiga visual digital"
+      },
+      {
+        "name": "Palmeo ocular",
+        "description": "Cubre ojos con palmas sin presionar, relaja 30 segundos",
+        "duration": "30 segundos",
+        "frequency": "Cada 2 horas",
+        "benefit": "Relaja músculos oculares"
+      }
+    ]
+  },
+
+  "product_recommendations": {
+    "budget_friendly": [
+      {
+        "item": "Cojín lumbar",
+        "price_range": "$15-40",
+        "priority": "Alta",
+        "impact": "Mejora soporte lumbar significativamente"
+      },
+      {
+        "item": "Soporte para laptop",
+        "price_range": "$15-40",
+        "priority": "Crítica si usas laptop",
+        "impact": "Evita flexión cervical excesiva"
+      },
+      {
+        "item": "Teclado y mouse externos USB",
+        "price_range": "$30-60",
+        "priority": "Alta con laptop",
+        "impact": "Permite postura neutral"
+      },
+      {
+        "item": "Almohadilla de muñeca",
+        "price_range": "$10-20",
+        "priority": "Media",
+        "impact": "Previene túnel carpiano"
+      },
+      {
+        "item": "Apoyapies",
+        "price_range": "$15-35",
+        "priority": "Media",
+        "impact": "Mejora postura si pies no tocan suelo"
+      }
+    ],
+
+    "medium_investment": [
+      {
+        "item": "Silla ergonómica básica",
+        "price_range": "$150-300",
+        "priority": "Crítica",
+        "impact": "Fundamento de ergonomía correcta",
+        "recommended_brands": ["Branch", "HON Ignition", "Autonomous ErgoChair"]
+      },
+      {
+        "item": "Monitor externo",
+        "price_range": "$100-200",
+        "priority": "Alta",
+        "impact": "Altura correcta sin compromiso",
+        "specs": "24-27 pulgadas, ajuste de altura"
+      },
+      {
+        "item": "Lámpara de escritorio LED",
+        "price_range": "$30-80",
+        "priority": "Media",
+        "impact": "Reduce fatiga visual",
+        "specs": "Regulable, 4000-5000K, brazo ajustable"
+      }
+    ],
+
+    "premium": [
+      {
+        "item": "Silla ergonómica profesional",
+        "price_range": "$500-1200",
+        "priority": "Alta",
+        "impact": "Máxima ergonomía y durabilidad",
+        "recommended": ["Herman Miller Aeron", "Steelcase Leap", "Secretlab Titan"]
+      },
+      {
+        "item": "Escritorio de pie ajustable",
+        "price_range": "$300-800",
+        "priority": "Media-Alta",
+        "impact": "Alterna entre sentado y de pie",
+        "benefit": "Reduce riesgos de sedentarismo"
+      }
+    ]
+  },
+
+  "educational_content": {
+    "proper_posture": {
+      "sitting": [
+        "Espalda completamente apoyada en respaldo",
+        "Curva lumbar natural mantenida (no plana ni muy arqueada)",
+        "Pies planos en el suelo o apoyapies",
+        "Rodillas a 90-100 grados",
+        "Muslos paralelos al suelo",
+        "Codos a 90-100 grados",
+        "Muñecas neutrales (no flexionadas ni extendidas)",
+        "Hombros relajados (no elevados ni adelantados)",
+        "Cabeza alineada con columna (no adelantada)",
+        "Vista al monitor: ligeramente hacia abajo (10-15°)"
+      ],
+      "monitor_position": [
+        "Distancia: 50-70 cm (longitud de brazo)",
+        "Altura: borde superior a nivel de ojos",
+        "Ángulo: perpendicular a ventanas",
+        "Inclinación: 10-20° hacia arriba",
+        "Centrado frente al usuario"
+      ],
+      "keyboard_mouse": [
+        "Mismo nivel que codos",
+        "Cerca del cuerpo (no extender brazos)",
+        "Muñecas flotantes o con soporte ligero",
+        "Mouse al lado del teclado",
+        "Evitar torcer muñecas lateralmente"
+      ]
+    },
+
+    "warning_signs": {
+      "seek_medical_attention": [
+        "Dolor que persiste más de 2 semanas",
+        "Dolor que empeora progresivamente",
+        "Hormigueo o entumecimiento en brazos/manos",
+        "Debilidad muscular",
+        "Dolor que irradia a brazo o pierna",
+        "Dificultad para realizar actividades diarias",
+        "Dolor que interrumpe el sueño"
+      ],
+      "early_warnings": [
+        "Molestia leve pero frecuente",
+        "Rigidez al levantarse",
+        "Necesidad de cambiar posición constantemente",
+        "Fatiga muscular al final del día",
+        "Cefaleas tensionales frecuentes"
+      ]
+    }
+  }
+}
